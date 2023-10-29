@@ -1,0 +1,45 @@
+from telegram import Update
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+
+import openai
+
+# Initialize OpenAI with your ChatGPT API key
+openai.api_key = 'YOUR_CHAT_GPT_API_KEY'
+
+# Initialize Telegram API with your Telegram bot token, API key, and hash
+TELEGRAM_BOT_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+TELEGRAM_API_KEY = 'YOUR_TELEGRAM_API_KEY'
+TELEGRAM_API_HASH = 'YOUR_TELEGRAM_API_HASH'
+
+# Initialize the bot
+updater = Updater(token=TELEGRAM_BOT_TOKEN, use_context=True)
+dp = updater.dispatcher
+
+# Define a function to respond to messages using ChatGPT
+def chat_gpt_response(message):
+   response = openai.Completion.create(
+       model="davinci",  # You can use a different model if you prefer
+       messages=[
+           {"role": "system", "content": "You are a helpful assistant."},
+           {"role": "user", "content": message}
+       ]
+   )
+   return response.choices[0].message['content']
+
+# Define a function to handle regular messages
+def message_handler(update: Update, context: CallbackContext) -> None:
+   user_message = update.message.text
+   response = chat_gpt_response(user_message)
+   update.message.reply_text(response)
+
+# Define a function to start the bot
+def start(update: Update, context: CallbackContext) -> None:
+   update.message.reply_text('Hi! I am your ChatGPT bot. Send me a message and I will respond.')
+
+# Add handlers
+dp.add_handler(CommandHandler("start", start))
+dp.add_handler(MessageHandler(Filters.text & ~Filters.command, message_handler))
+
+# Start the bot
+updater.start_polling()
+updater.idle()
